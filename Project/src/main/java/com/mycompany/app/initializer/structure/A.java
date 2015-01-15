@@ -10,6 +10,8 @@ import java.util.Map;
  */
 public class A {
     private Integer a;
+
+    @Providere(MyStringIntegerProvider.class)
     private String b;
     private boolean c;
     private Date d;

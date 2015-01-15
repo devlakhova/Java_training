@@ -8,7 +8,7 @@ import java.util.Arrays;
 public class G {
     private String s;
 
-    @Provider(HProvider.class)
+    @Providere(HProvider.class)
     private H h;
 
     private int[] intArr;

@@ -13,4 +13,11 @@ public class H {
     public void setS(String s) {
         this.s = s;
     }
+
+    @Override
+    public String toString() {
+        return "H{" +
+                "s='" + s + '\'' +
+                '}';
+    }
 }

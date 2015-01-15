@@ -1,14 +1,19 @@
 package com.mycompany.app.initializer;
 
 import com.mycompany.app.initializer.structure.A;
+import com.mycompany.app.initializer.structure.Providere;
+import com.mycompany.app.initializer.structure.ValueProvider;
 import sun.jvm.hotspot.jdi.InterfaceTypeImpl;
 import sun.jvm.hotspot.oops.FieldType;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import sun.reflect.generics.repository.ClassRepository;
 import sun.rmi.rmic.iiop.InterfaceType;
 
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.security.Provider;
 import java.util.*;
 
 /**
@@ -17,12 +22,17 @@ import java.util.*;
 public class InitializerImpl {
 
     private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
+    private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS = getWrapperMap();
+
     private static Set <Class<?>> initializeStack = new HashSet<Class<?>>();
 
     public <T> T getInstance(Class<T> aClass) {
         T instance;
         try {
-            if (isWrapperType(aClass) || aClass.isPrimitive()) {
+            if (aClass.isPrimitive()) {
+                aClass = wrap(aClass);
+            }
+            if (isWrapperType(aClass)) {
                 return (T) getPrimitive(aClass);
             } else if (aClass.equals(String.class)) {
                 return (T) new String("abc");
@@ -30,6 +40,10 @@ public class InitializerImpl {
                 return (T) new Date();
             } else if (aClass.isEnum()) {
                 return aClass.getEnumConstants()[0];
+            } else if (aClass.isArray()) {
+                Object arr = Array.newInstance(aClass.getComponentType(), 1);
+                Array.set(arr, 0, getInstance(aClass.getComponentType()));
+                return (T) arr;
             }
 
             if (isInitialized(aClass))
@@ -39,8 +53,21 @@ public class InitializerImpl {
             instance = constr.newInstance();
             initializeStack.add(aClass);
 
-            for (Method method : findSetters(aClass)) {
-                method.invoke(instance, getInstance(method.getGenericParameterTypes()[0]));
+
+            for (PropertyDescriptor propertyDescriptor : java.beans.Introspector.getBeanInfo(aClass).getPropertyDescriptors()) {
+                if (propertyDescriptor.getPropertyType().equals(Class.class)) {
+                    continue;
+                }
+                Field field = aClass.getDeclaredField(propertyDescriptor.getName());
+                Method setter = propertyDescriptor.getWriteMethod();
+                if (field.isAnnotationPresent(Providere.class)) {
+                    Providere annotation = field.getAnnotation(Providere.class);
+                    Class<? extends ValueProvider> annotadedClass = annotation.value();
+                    Object obj = annotadedClass.newInstance().provide();
+                    setter.invoke(instance,  obj);
+                } else {
+                    setter.invoke(instance, getInstance(setter.getGenericParameterTypes()[0]));
+                }
             }
 
             System.out.println(instance);
@@ -49,15 +76,14 @@ public class InitializerImpl {
         catch (InstantiationException ex) {
             System.out.println("Couldn't instantiate");
             ex.printStackTrace();
-        }
-        catch (IllegalAccessException ex) {
+        } catch (IllegalAccessException ex) {
             System.out.println("No Access");
             ex.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
-            Constructor <T> constr = (Constructor<T>) aClass.getConstructors()[0];
+            Constructor constr = (Constructor) aClass.getConstructors()[0];
             ArrayList <Object> parameters = new ArrayList<Object>();
             for (Class zClass : constr.getParameterTypes()) {
                 parameters.add(getInstance(zClass));
@@ -67,6 +93,7 @@ public class InitializerImpl {
                     instance = (T) constr.newInstance(parameters);
                 else
                     instance = aClass.newInstance();
+                return instance;
             } catch (InstantiationException e1) {
                 e1.printStackTrace();
             } catch (IllegalAccessException e1) {
@@ -74,8 +101,11 @@ public class InitializerImpl {
             } catch (InvocationTargetException e1) {
                 e1.printStackTrace();
             }
-        }
-        finally {
+        } catch (IntrospectionException e) {
+
+        } catch (NoSuchFieldException e) {
+
+        } finally {
         }
         return null;
     }
@@ -84,8 +114,6 @@ public class InitializerImpl {
         if (type instanceof Class) {
             return getInstance((Class)type);
         }
-        //TODO
-
         Class rawType = ((ParameterizedTypeImpl)type).getRawType();
 
         if (Collection.class.isAssignableFrom(rawType)) {
@@ -100,9 +128,9 @@ public class InitializerImpl {
     }
 
     public <T> Collection<T> getCollection(Class collectionType, Class<T> generic) throws IllegalAccessException, InstantiationException {
-        T element = getInstance(generic);
 
-        Collection <T> collection = null;
+        T element = getInstance(generic);
+        Collection <T> collection;
         if (collectionType.isInterface()) {
             if (List.class.isAssignableFrom(collectionType)) {
                 collection = new ArrayList<T>();
@@ -127,28 +155,30 @@ public class InitializerImpl {
             else {
                 map = new HashMap<T,E>();
             }
-
         } else {
-            map = (Map)mapType.newInstance();
+            map = (Map<T,E>)mapType.newInstance();
         }
         map.put(key, value);
         return map;
     }
 
     public Object getPrimitive(Class<?> aClass) {
-        if (aClass.equals(boolean.class) || aClass.equals(Boolean.class)) {
+        if (aClass.isPrimitive()) {
+            aClass = wrap(aClass);
+        }
+        if (aClass.equals(Boolean.class)) {
             return new Random().nextBoolean();
-        } else if (aClass.equals(byte.class) || aClass.equals(Byte.class)) {
+        } else if (aClass.equals(Byte.class)) {
             return (byte) (new Random().nextInt(Byte.MAX_VALUE * 2 + 1) - Byte.MAX_VALUE);
-        } else if (aClass.equals(short.class) || aClass.equals(Short.class)) {
+        } else if (aClass.equals(Short.class)) {
             return (short) (new Random().nextInt(Short.MAX_VALUE * 2 + 1) - Short.MAX_VALUE);
-        } else if (aClass.equals(int.class) || aClass.equals(Integer.class)) {
+        } else if (aClass.equals(Integer.class)) {
             return new Random().nextInt();
-        } else if (aClass.equals(long.class) || aClass.equals(Long.class)) {
+        } else if (aClass.equals(Long.class)) {
             return new Random().nextLong();
-        } else if (aClass.equals(float.class) || aClass.equals(Float.class)) {
+        } else if (aClass.equals(Float.class)) {
             return new Random().nextFloat();
-        } else if (aClass.equals(double.class) || aClass.equals(Double.class)) {
+        } else if (aClass.equals(Double.class)) {
             return new Random().nextDouble();
         } else {
             throw new IllegalArgumentException(
@@ -178,34 +208,23 @@ public class InitializerImpl {
         ret.add(Void.class);
         return ret;
     }
-    static ArrayList<Method> findSetters(Class<?> c) {
-        ArrayList<Method> list = new ArrayList<Method>();
-        Method[] methods = c.getDeclaredMethods();
-        for (Method method : methods)
-            if (isSetter(method))
-                list.add(method);
-        return list;
+
+    private static <T> Class<T> wrap(Class<T> c) {
+        return c.isPrimitive() ? (Class<T>) PRIMITIVES_TO_WRAPPERS.get(c) : c;
     }
 
-    public static boolean isSetter(Method method) {
-        return Modifier.isPublic(method.getModifiers()) &&
-                method.getReturnType().equals(void.class) &&
-                method.getParameterTypes().length == 1 &&
-                method.getName().matches("^set[A-Z].*");
-//        java.beans.Introspector.getBeanInfo(A.class).getPropertyDescriptors()[0].
-//                java.beans.Introspector.getBeanInfo(A.class).
+    private static Map<Class<?>,Class<?>> getWrapperMap() {
+        Map <Class<?>, Class<?>> wrap = new HashMap<Class<?>, Class<?>>();
+        wrap.put(boolean.class, Boolean.class);
+        wrap.put(byte.class, Byte.class);
+        wrap.put(char.class, Character.class);
+        wrap.put(double.class, Double.class);
+        wrap.put(float.class, Float.class);
+        wrap.put(int.class, Integer.class);
+        wrap.put(long.class, Long.class);
+        wrap.put(short.class, Short.class);
+        wrap.put(void.class, Void.class);
+        return wrap;
     }
 
-    public static boolean isGetter(Method method) {
-        if (Modifier.isPublic(method.getModifiers()) &&
-                method.getParameterTypes().length == 0) {
-            if (method.getName().matches("^get[A-Z].*") &&
-                    !method.getReturnType().equals(void.class))
-                return true;
-            if (method.getName().matches("^is[A-Z].*") &&
-                    method.getReturnType().equals(boolean.class))
-                return true;
-        }
-        return false;
-    }
 }
