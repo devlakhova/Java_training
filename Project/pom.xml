@@ -11,10 +11,7 @@
   <url>http://maven.apache.org</url>
 
   <modules>
-    <module>server</module>
-    <module>client</module>
       <module>Server</module>
-      <module>Client</module>
       <module>Client</module>
   </modules>
   <properties>
@@ -28,9 +25,19 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>org.reflections</groupId>
+          <artifactId>reflections</artifactId>
+          <version>0.9.9-RC1</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <version>11.0.2</version>
+      </dependency>
   </dependencies>
   <build>
-    <plugins>
+    <!--<plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-eclipse-plugin</artifactId>
@@ -38,6 +45,6 @@
          <wtpversion>2.0</wtpversion>
         </configuration>
       </plugin>
-    </plugins>
+    </plugins>-->
   </build>
 </project>
