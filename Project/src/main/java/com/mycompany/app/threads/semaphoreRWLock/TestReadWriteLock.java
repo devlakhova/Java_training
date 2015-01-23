@@ -3,6 +3,7 @@ package com.mycompany.app.threads.semaphoreRWLock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * Created by devlakhova on 1/23/15.
@@ -29,7 +30,7 @@ public class TestReadWriteLock {
 
     private class ListChanger implements Runnable {
 
-        ReadWriteLockOnSemaphore rwLock = new ReadWriteLockOnSemaphore();
+        ReadWriteLock rwLock = new ReadWriteLockOnSemaphore();
         Semaphore semaphore = new Semaphore(2);
 
         @Override
