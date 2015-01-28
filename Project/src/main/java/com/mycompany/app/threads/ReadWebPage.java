@@ -30,7 +30,7 @@ public class ReadWebPage {
             public List<String> call()
                     throws IOException, MalformedURLException
             {
-                List<String> lines = new ArrayList<>();
+                List<String> lines = new ArrayList<String>();
                 URL url = new URL(args[0]);
                 HttpURLConnection con;
                 con = (HttpURLConnection) url.openConnection();
@@ -54,8 +54,10 @@ public class ReadWebPage {
         catch (ExecutionException ee)
         {
             System.err.println("Callable through exception: "+ee.getMessage());
-        }
-        catch (InterruptedException | TimeoutException eite)
+        } catch (InterruptedException eite)
+        {
+            System.err.println("URL not responding");
+        } catch (TimeoutException eite)
         {
             System.err.println("URL not responding");
         }

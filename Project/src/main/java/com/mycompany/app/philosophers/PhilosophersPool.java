@@ -17,7 +17,7 @@ public class PhilosophersPool {
 
     public PhilosophersPool() throws InterruptedException {
 
-        threads = new LinkedList<>();
+        threads = new LinkedList<Runnable>();
 
 
         for (int i = 0; i < 5; i++) {
@@ -36,7 +36,7 @@ public class PhilosophersPool {
                 System.out.print("Ph " + thread.name + " ate - " + thread.numberOfEats + " ");
                 System.out.println("---");
             }
-            Thread.sleep(10_000);
+            Thread.sleep(10000);
         }
     }
 

@@ -13,9 +13,9 @@ import java.util.*;
  */
 public class Runner {
 
-    private static Map<Class, Class> diMap = new HashMap<>();
+    private static Map<Class, Class> diMap = new HashMap<Class, Class>();
     private static Set <Class<?>> initializeStack = new HashSet<Class<?>>();
-    private static Map<Class, List<Object>> applicationScope = new HashMap<>();
+    private static Map<Class, List<Object>> applicationScope = new HashMap<Class, List<Object>>();
 
     public static void main(String[] args) {
 
@@ -102,7 +102,7 @@ public class Runner {
     public static void putBeanToScope(Class classa, Object value) {
         List <Object> beanList = applicationScope.get(classa);
         if (beanList == null) {
-            beanList = new ArrayList<>();
+            beanList = new ArrayList<Object>();
         }
         beanList.add(value);
         applicationScope.put(classa, beanList);

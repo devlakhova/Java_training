@@ -24,8 +24,12 @@
         <processorPath useClasspath="true" />
         <module name="Client" />
         <module name="Server" />
+        <module name="Streams" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="Server" target="1.6" />
+    </bytecodeTargetLevel>
   </component>
 </project>
 

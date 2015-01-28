@@ -72,7 +72,7 @@ public class Streamer{
         @Override
         public void run() {
             try {
-                for (int i = 0; i < 10_000_000; i++) {
+                for (int i = 0; i < 10000000; i++) {
                     taskQueue.enqueue(Integer.valueOf(i));
                 }
                 counter.dec(1);

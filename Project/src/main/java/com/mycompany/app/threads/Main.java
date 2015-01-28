@@ -23,7 +23,7 @@ public class Main implements Runnable {
 
     public static void main(String[] args) throws InterruptedException {
         final long maxVal = 10l * 1000 * 1000 * 100;
-        long interval = 1_000_000_00;
+        long interval = 100000000;
 //        ExecutorService
 //        Executors
 //        Future
@@ -50,7 +50,7 @@ public class Main implements Runnable {
         ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         ExecutionPool ep = new ExecutionPool(Runtime.getRuntime().availableProcessors());
-        List<Main> mains = new ArrayList<>();
+        List<Main> mains = new ArrayList<Main>();
         for (long i = 0; i < maxVal; i+= interval) {
             Main e = new Main(i, i + interval);
 //            ep.submit(e);
